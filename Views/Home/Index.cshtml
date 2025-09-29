@@ -2,7 +2,20 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<body>
+    <div class="text-center">
+        <h1 class="display-4">Welcome to Pattern Manager</h1>
+        <br />
+        <p>This is an application that will help you organize your patterns
+            to more easily find the inspiration your looking for. Let's get
+            started!
+        </p>
+        <div class="mt-4">
+            <a asp-controller="Home" asp-action="ManagePatterns" class="btn btn-primary">
+                Manager Patterns
+            </a>
+            <a>Continue a Pattern</a>
+            <a>Your Project Journal</a>
+        </div>
+    </div>
+</body>

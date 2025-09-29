@@ -1,0 +1,203 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add New Pattern</title>
+    <link rel="stylesheet" href="~/css/newPatternStyling.css" />
+</head>
+<body>
+    @model YarnPatternApp.Models.ViewModels.NewPattern
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Add New Yarn Pattern</h2>
+                    </div>
+                    <div class="card-body">
+
+
+                        <h6 class="card-title">Auto-Fill from PDF (Optional)</h6>
+                        <p class="card-text text-muted">Upload a pattern PDF to automatically extract and fill form fields. You can review and edit all information before saving.</p>
+                        <input type="file" class="form-control mb-2" accept=".pdf" id="pdfUpload" />
+                        <button type="button" class="btn btn-outline-primary" id="parsePdfBtn">
+                            Parse PDF & Auto-Fill Form
+                        </button>
+                        <div id="parseStatus" class="mt-2"></div>
+
+                        <form asp-action="AddPattern" method="post">
+
+                            <div class="row mb-4">
+
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label asp-for="Name" class="form-label">Pattern Name *</label>
+                                    <input asp-for="Name" type="text" class="form-control"
+                                           placeholder="Enter pattern name" required />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="Designer" class="form-label">Designer</label>
+                                    <input asp-for="Designer" type="text" class="form-control"
+                                           placeholder="Designer name" />
+                                    <span asp-validation-for="Designer" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="CraftType" class="form-label">Craft Type *</label>
+                                    <input asp-for="CraftType" type="text" class="form-control"
+                                           placeholder="e.g. Knitting, Crochet, Weaving..." required />
+                                    <span asp-validation-for="CraftType" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Difficulty" class="form-label">Difficulty Level</label>
+                                    <select asp-for="Difficulty" class="form-select">
+                                        <option value="">Select difficulty...</option>
+                                        <option value="1">1 - Beginner</option>
+                                        <option value="2">2 - Intermediate</option>
+                                        <option value="3">3 - Advanced</option>
+                                        <option value="4">4 - Expert</option>
+                                    </select>
+                                    <span asp-validation-for="Difficulty" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label asp-for="PatSource" class="form-label">Pattern Source</label>
+                                    <input asp-for="PatSource" type="text" class="form-control"
+                                           placeholder="Website URL, book name, magazine, etc." />
+                                    <span asp-validation-for="PatSource" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label asp-for="FilePath" class="form-label">Pattern File Path *</label>
+                                    <input asp-for="FilePath" type="text" class="form-control"
+                                           placeholder="e.g. /patterns/folder/pattern.pdf" required />
+                                    <div class="form-text">Enter the path to where the pattern file is stored</div>
+                                    <span asp-validation-for="FilePath" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-primary border-bottom pb-2">Pattern Status</h5>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input asp-for="IsFree" type="checkbox" class="form-check-input" />
+                                        <label asp-for="IsFree" class="form-check-label">Free Pattern?</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input asp-for="IsFavorite" type="checkbox" class="form-check-input" />
+                                        <label asp-for="IsFavorite" class="form-check-label">Favorite?</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input asp-for="HaveMade" type="checkbox" class="form-check-input" />
+                                        <label asp-for="HaveMade" class="form-check-label">Already Made?</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-primary border-bottom pb-2">Pattern Details</h5>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Project Types</label>
+                                    <div class="tag-input-container">
+                                        <div class="tags-display" id="projectTypesDisplay"></div>
+                                        <input type="text" class="form-control tag-input"
+                                               placeholder="Type project type and press Enter"
+                                               id="projectTypesInput" />
+                                    </div>
+                                    <div class="form-text">Press Enter or comma to add project types</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Yarn Weights</label>
+                                    <div class="tag-input-container">
+                                        <div class="tags-display" id="yarnWeightsDisplay"></div>
+                                        <input type="number" class="form-control tag-input"
+                                               placeholder="Type weight number (0-7) and press Enter"
+                                               id="yarnWeightsInput" min="0" max="7" />
+                                    </div>
+                                    <div class="form-text">Enter yarn weight numbers (0-7), press Enter to add</div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Tool Sizes</label>
+                                    <div class="tag-input-container">
+                                        <div class="tags-display" id="toolSizesDisplay"></div>
+                                        <input type="number" class="form-control tag-input"
+                                               placeholder="Type size (e.g. 4.5) and press Enter"
+                                               id="toolSizesInput" step="0.25" min="0" />
+                                    </div>
+                                    <div class="form-text">Enter hook/needle sizes as decimal numbers only (e.g. 4.5, 5.0)</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Yarn Brands</label>
+                                    <div class="tag-input-container">
+                                        <div class="tags-display" id="yarnBrandsDisplay"></div>
+                                        <input type="text" class="form-control tag-input"
+                                               placeholder="Type brand name and press Enter"
+                                               id="yarnBrandsInput" />
+                                    </div>
+                                    <div class="form-text">Press Enter or comma to add yarn brands</div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <label class="form-label">Tags</label>
+                                    <div class="tag-input-container">
+                                        <div class="tags-display" id="tagsDisplay"></div>
+                                        <input type="text" class="form-control tag-input"
+                                               placeholder="Type tag and press Enter"
+                                               id="tagsInput" />
+                                    </div>
+                                    <div class="form-text">Press Enter or comma to add tags</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <a asp-action="Index" class="btn btn-secondary">
+                                            Cancel
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            Add Pattern
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/newPattern.js"></script>
+</body>
+</html>

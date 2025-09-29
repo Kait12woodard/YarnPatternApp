@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using YarnPatternApp.Data.Services.Abstract;
+using YarnPatternApp.Data.Services.Concrete;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<YarnPatternApp.Models.YarnPatternContext>(options =>
@@ -6,6 +9,8 @@ builder.Services.AddDbContext<YarnPatternApp.Models.YarnPatternContext>(options 
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<IPatternRepo, PatternRepo>();
+builder.Services.AddScoped<IPdfParsingService, PdfParsingService>();
 
 var app = builder.Build();
 
