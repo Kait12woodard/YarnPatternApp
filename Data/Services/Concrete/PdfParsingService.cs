@@ -13,6 +13,9 @@ namespace YarnPatternApp.Data.Services.Concrete
             using var document = PdfDocument.Open(stream);
 
             var allText = string.Join("\n\n", document.GetPages().Select(p => p.Text));
+            var originalFileName = Path.GetFileNameWithoutExtension(pdfFile.FileName);
+            var safeFileName = SanitizeFileName(originalFileName);
+            var filePath = $"Data/patterns/{safeFileName}.pdf";
 
             return new NewPattern
             {
@@ -21,6 +24,7 @@ namespace YarnPatternApp.Data.Services.Concrete
                 CraftType = ExtractCraftType(allText),
                 Difficulty = ExtractDifficulty(allText),
                 PatSource = ExtractSource(allText),
+                FilePath = filePath,
                 YarnWeights = ExtractYarnWeights(allText),
                 ToolSizes = ExtractToolSizes(allText),
                 ProjectTypes = ExtractProjectTypes(allText),
@@ -31,15 +35,17 @@ namespace YarnPatternApp.Data.Services.Concrete
 
         private string? ExtractPatternName(string text)
         {
-            // Method 1: Look for specific ALL CAPS patterns, but exclude obvious non-titles
-            var allCapsPattern = @"\b[A-Z][A-Z\s]{7,35}[A-Z]\b";
+            var craftWords = new[] { "TOP", "HAT", "SCARF", "SWEATER", "CARDIGAN", "BLANKET", "SHAWL",
+                             "COWL", "MITTENS", "GLOVES", "SOCKS", "BAG", "DRESS", "TANK",
+                             "VEST", "WRAP", "PONCHO", "AFGHAN", "THROW", "TOTE", "PILLOW" };
+
+            var allCapsPattern = @"\b[A-Z][A-Z\s]{5,40}[A-Z]\b";
             var allCapsMatches = Regex.Matches(text, allCapsPattern);
 
             foreach (Match match in allCapsMatches)
             {
                 var candidate = match.Value.Trim();
 
-                // Enhanced filtering for non-titles
                 if (candidate.Contains("BY ") || candidate.Contains("DESIGNED") ||
                     candidate.Contains("CREATED") || candidate.Contains("AUTHOR") ||
                     candidate.Contains("COPYRIGHT") || candidate.Contains("CROCHETS") ||
@@ -48,32 +54,17 @@ namespace YarnPatternApp.Data.Services.Concrete
                     candidate.Contains("ROW") || candidate.Contains("MATERIALS") ||
                     candidate.Contains("GAUGE") || candidate.Contains("CH ") ||
                     candidate.Contains(" DC ") || candidate.Contains("FINISHED") ||
-                    candidate.Contains("SUPPLIES") || candidate.Contains("PATTERN"))
+                    candidate.Contains("SUPPLIES") || candidate.Contains("PATTERN") ||
+                    candidate.Contains("MEASUREMENTS") || candidate.Contains("TUTORIAL") ||
+                    candidate.Contains("VIDEO") || candidate.Contains("SIZING"))
                     continue;
 
-                // Look for good craft-related words
-                if (HasGoodTitleWords(candidate) && ContainsMultipleWords(candidate))
+                if (craftWords.Any(word => candidate.Contains(word)) && candidate.Split(' ').Length >= 2)
                 {
                     return candidate;
                 }
             }
 
-            // Method 2: Look for the specific pattern "BUTTERFLY TOP" directly
-            var butterflyMatch = Regex.Match(text, @"\bBUTTERFLY\s+TOP\b", RegexOptions.IgnoreCase);
-            if (butterflyMatch.Success)
-            {
-                return "BUTTERFLY TOP";
-            }
-
-            // Method 3: Try to find any standalone words that are craft items
-            var craftItemPattern = @"\b([A-Z]{3,15})\s+(TOP|HAT|SCARF|SWEATER|CARDIGAN|BLANKET|SHAWL|COWL|MITTENS|GLOVES|SOCKS|BAG|DRESS|TANK|VEST|WRAP|PONCHO)\b";
-            var craftMatch = Regex.Match(text, craftItemPattern, RegexOptions.IgnoreCase);
-            if (craftMatch.Success)
-            {
-                return craftMatch.Value.ToUpper();
-            }
-
-            // Method 4: Line-based approach with better author filtering
             var lines = text.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
                             .Select(l => l.Trim())
                             .Where(l => !string.IsNullOrEmpty(l) && l.Length > 3 && l.Length < 60)
@@ -83,7 +74,6 @@ namespace YarnPatternApp.Data.Services.Concrete
             {
                 var lowerLine = line.ToLower();
 
-                // Enhanced author/metadata detection
                 if (lowerLine.Contains("by ") || lowerLine.Contains("designed") ||
                     lowerLine.Contains("created") || lowerLine.Contains("copyright") ||
                     lowerLine.Contains("©") || lowerLine.Contains("author") ||
@@ -93,23 +83,30 @@ namespace YarnPatternApp.Data.Services.Concrete
                     lowerLine.Contains("video") || lowerLine.Contains("sizing"))
                     continue;
 
-                // Skip crochet instructions
                 if (lowerLine.StartsWith("row") || lowerLine.Contains("ch ") ||
                     lowerLine.Contains(" dc") || lowerLine.Contains(" st") ||
                     lowerLine.Contains("materials") || lowerLine.Contains("gauge"))
                     continue;
 
-                // Accept ALL CAPS titles
                 if (line == line.ToUpper() && line.Length >= 6 && line.Length <= 40 &&
-                    ContainsMultipleWords(line))
+                    line.Split(' ').Length >= 2)
                     return line;
 
-                // Accept Title Case
                 if (IsTitleCase(line) && line.Length >= 6 && line.Length <= 40)
                     return line;
             }
 
             return null;
+        }
+
+        private bool IsTitleCase(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line)) return false;
+
+            var words = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0) return false;
+
+            return words.All(word => word.Length > 0 && char.IsUpper(word[0]));
         }
 
         private bool ContainsMultipleWords(string line)
@@ -126,16 +123,6 @@ namespace YarnPatternApp.Data.Services.Concrete
 
             var lowerLine = line.ToLower();
             return goodWords.Any(word => lowerLine.Contains(word));
-        }
-
-        private bool IsTitleCase(string line)
-        {
-            if (string.IsNullOrWhiteSpace(line)) return false;
-
-            var words = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (words.Length == 0) return false;
-
-            return words.All(word => word.Length > 0 && char.IsUpper(word[0]));
         }
 
         private string? ExtractDesigner(string text)
@@ -429,6 +416,23 @@ namespace YarnPatternApp.Data.Services.Concrete
             }
 
             return tags.Distinct().ToList();
+        }
+
+        private string SanitizeFileName(string fileName)
+        {
+            var invalid = Path.GetInvalidFileNameChars();
+            var sanitized = string.Join("", fileName.Select(c =>
+                invalid.Contains(c) ? '-' : c));
+
+            sanitized = sanitized.Replace('+', '-');
+            sanitized = Regex.Replace(sanitized, @"[\s\-]+", "-");
+            sanitized = sanitized.Trim('-');
+            sanitized = sanitized.ToLower();
+
+            if (sanitized.Length > 100)
+                sanitized = sanitized.Substring(0, 100).TrimEnd('-');
+
+            return sanitized;
         }
     }
 }

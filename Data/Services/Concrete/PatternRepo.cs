@@ -225,5 +225,13 @@ namespace YarnPatternApp.Data.Services.Concrete
                 }
             }
         }
+
+        public List<Pattern> GetAllPatterns()
+        {
+            return _context.Patterns
+                .Include(p => p.Designer)
+                .Include(p => p.CraftType)
+                .ToList();
+        }
     }
 }

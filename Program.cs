@@ -11,6 +11,9 @@ builder.Services.AddDbContext<YarnPatternApp.Models.YarnPatternContext>(options 
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IPatternRepo, PatternRepo>();
 builder.Services.AddScoped<IPdfParsingService, PdfParsingService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IThumbnailGeneratorService, ThumbnailGeneratorService>();
+builder.Services.AddHttpClient<ILLMParsingService, LLMParsingService>();
 
 var app = builder.Build();
 

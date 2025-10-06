@@ -20,6 +20,13 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.9" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
     <PackageReference Include="PdfPig" Version="0.1.11" />
+    <PackageReference Include="PDFtoImage" Version="5.1.1" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\patterns\" />
+    <Folder Include="wwwroot\images\thumbnails\" />
   </ItemGroup>
 
 </Project>

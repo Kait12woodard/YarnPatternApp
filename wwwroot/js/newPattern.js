@@ -36,6 +36,8 @@
             return;
         }
 
+        clearFormFields();
+
         statusDiv.innerHTML = '<div class="alert alert-info">Parsing PDF... Please wait.</div>';
 
         const formData = new FormData();
@@ -55,6 +57,7 @@
                 if (result.data.craftType) document.querySelector('input[name="CraftType"]').value = result.data.craftType;
                 if (result.data.difficulty) document.querySelector('select[name="Difficulty"]').value = result.data.difficulty;
                 if (result.data.patSource) document.querySelector('input[name="PatSource"]').value = result.data.patSource;
+                if (result.data.filePath) document.querySelector('input[name="FilePath"]').value = result.data.filePath;
 
                 result.data.yarnWeights?.forEach(weight => {
                     addTagToInput('yarnWeightsInput', 'yarnWeightsDisplay', weight, validateYarnWeight);
@@ -84,6 +87,44 @@
             statusDiv.innerHTML = '<div class="alert alert-danger">Error parsing PDF. Please try again or fill out manually.</div>';
         }
     });
+
+    function clearFormFields() {
+        const nameInput = document.querySelector('input[name="Name"]');
+        const designerInput = document.querySelector('input[name="Designer"]');
+        const craftTypeInput = document.querySelector('input[name="CraftType"]');
+        const patSourceInput = document.querySelector('input[name="PatSource"]');
+        const filePathInput = document.querySelector('input[name="FilePath"]');
+
+        if (nameInput) nameInput.value = '';
+        if (designerInput) designerInput.value = '';
+        if (craftTypeInput) craftTypeInput.value = '';
+        if (patSourceInput) patSourceInput.value = '';
+        if (filePathInput) filePathInput.value = '';
+
+        const difficultySelect = document.querySelector('select[name="Difficulty"]');
+        if (difficultySelect) difficultySelect.value = '';
+
+        const isFreeCheckbox = document.querySelector('input[name="IsFree"]');
+        const isFavoriteCheckbox = document.querySelector('input[name="IsFavorite"]');
+        const haveMadeCheckbox = document.querySelector('input[name="HaveMade"]');
+
+        if (isFreeCheckbox) isFreeCheckbox.checked = false;
+        if (isFavoriteCheckbox) isFavoriteCheckbox.checked = false;
+        if (haveMadeCheckbox) haveMadeCheckbox.checked = false;
+
+        clearTagDisplay('projectTypesDisplay');
+        clearTagDisplay('yarnWeightsDisplay');
+        clearTagDisplay('toolSizesDisplay');
+        clearTagDisplay('yarnBrandsDisplay');
+        clearTagDisplay('tagsDisplay');
+    }
+
+    function clearTagDisplay(displayId) {
+        const display = document.getElementById(displayId);
+        if (display) {
+            display.innerHTML = '';
+        }
+    }
 
     function addTagToInput(inputId, displayId, value, validator) {
         const input = document.getElementById(inputId);

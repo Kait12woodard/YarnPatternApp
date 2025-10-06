@@ -1,13 +1,15 @@
 ﻿<body>
-    <h1>Pattern Library</h1>
-    <div>
-        <a asp-controller="Home" asp-action="AddPattern" class="btn btn-primary">Add New Pattern</a>
-    </div>
-    <div>
-        <h2>Your Patterns</h2>
-        <ul id="patternList">
-        </ul>
-        <p id="emptyState">No Patterns in Library yet.</p>
+    <div class="container mt-4">
+        <h1 class="mb-4">Pattern Library</h1>
+        <div class="mb-4">
+            <a asp-controller="Home" asp-action="AddPattern" class="btn btn-primary">Add New Pattern</a>
+        </div>
+        <div>
+            <h2 class="mb-3">Your Patterns</h2>
+            <div id="patternList" class="row g-4">
+            </div>
+            <p id="emptyState" class="text-muted">No Patterns in Library yet.</p>
+        </div>
     </div>
     <script src="~/js/librarydisplay.js"></script>
 </body>
