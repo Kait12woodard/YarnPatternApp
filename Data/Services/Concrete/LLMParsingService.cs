@@ -1,9 +1,10 @@
-﻿using System.Text;
-using System.Text.Json;
-using YarnPatternApp.Models.ViewModels;
-using YarnPatternApp.Data.Services.Abstract;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PDFtoImage;
 using SkiaSharp;
+using System.Text;
+using System.Text.Json;
+using YarnPatternApp.Data.Services.Abstract;
+using YarnPatternApp.Models.ViewModels;
 
 namespace YarnPatternApp.Data.Services.Concrete
 {
@@ -16,7 +17,7 @@ namespace YarnPatternApp.Data.Services.Concrete
         public LLMParsingService(HttpClient httpClient, ILogger<LLMParsingService> logger)
         {
             _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("http://192.168.1.5:11434");
+            _httpClient.BaseAddress = new Uri("http://192.168.1.3:11434");
             _httpClient.Timeout = TimeSpan.FromMinutes(2);
             _logger = logger;
         }
@@ -82,23 +83,28 @@ Project Types: {(pattern.ProjectTypes?.Any() == true ? string.Join(", ", pattern
 Yarn Brands: {(pattern.YarnBrands?.Any() == true ? string.Join(", ", pattern.YarnBrands) : "NOT FOUND")}
 Tags: {(pattern.Tags?.Any() == true ? string.Join(", ", pattern.Tags) : "NOT FOUND")}
 
-CRITICAL: Only include yarn brands you can actually read in the images. If you cannot see any brand names, use an empty array [].
+CRITICAL RULES:
+- Only include information you can CLEARLY READ in the images
+- If you cannot see a yarn brand name, use an empty array []
+- Use null for any field you cannot verify from the images
+- Do not use placeholder or example data
+- Verify all information before including it
 
-Respond ONLY with valid JSON:
+Respond ONLY with valid JSON in this exact format:
 {{
-    ""name"": ""BUTTERFLY TOP"",
-    ""designer"": ""Mae Crochets"",
-    ""craftType"": ""Crochet"",
-    ""difficulty"": 2,
-    ""patSource"": ""https://example.com"",
-    ""yarnWeights"": [""4""],
-    ""toolSizes"": [""5.0""],
-    ""projectTypes"": [""Top""],
-    ""yarnBrands"": [""Lion Brand"", ""Red Heart""],
-    ""tags"": [""seamless"", ""lace""]
+    ""name"": ""[pattern name from image or null]"",
+    ""designer"": ""[designer name from image or null]"",
+    ""craftType"": ""[types like Knitting, Crochet or Embroidery]"",
+    ""difficulty"": [1-4 or null],
+    ""patSource"": ""[URL from image or null]"",
+    ""yarnWeights"": [""[weight numbers like 3, 4, 5]"" or []],
+    ""toolSizes"": [""[sizes in mm like 5.0, 6.5]"" or []],
+    ""projectTypes"": [""[types like Hat, Scarf, Blanket, Toy, Bag]"" or []],
+    ""yarnBrands"": [""[actual yarn brand names visible in images]"" or []],
+    ""tags"": [""[features like seamless, video tutorial, butterfly]"" or []]
 }}
 
-If you cannot see information, use null or []. No explanations.";
+Return ONLY the JSON object. No explanations or additional text.";
         }
 
         private List<string> ConvertPdfToImages(string pdfPath, int maxPages = 10)
@@ -150,7 +156,8 @@ If you cannot see information, use null or []. No explanations.";
                 var jsonStr = llmResponse.Substring(jsonStart, jsonEnd - jsonStart + 1);
                 var enhanced = JsonSerializer.Deserialize<LLMPatternData>(jsonStr, new JsonSerializerOptions
                 {
-                    PropertyNameCaseInsensitive = true
+                    PropertyNameCaseInsensitive = true,
+                    Converters = { new NumberToStringConverter() }
                 });
 
                 if (enhanced == null) return original;
@@ -252,6 +259,35 @@ If you cannot see information, use null or []. No explanations.";
             public List<string> ProjectTypes { get; set; }
             public List<string> YarnBrands { get; set; }
             public List<string> Tags { get; set; }
+        }
+
+        private class NumberToStringConverter : System.Text.Json.Serialization.JsonConverter<List<string>>
+        {
+            public override List<string> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                var list = new List<string>();
+
+                if (reader.TokenType == JsonTokenType.StartArray)
+                {
+                    while (reader.Read())
+                    {
+                        if (reader.TokenType == JsonTokenType.EndArray)
+                            break;
+
+                        if (reader.TokenType == JsonTokenType.Number)
+                            list.Add(reader.GetDecimal().ToString());
+                        else if (reader.TokenType == JsonTokenType.String)
+                            list.Add(reader.GetString());
+                    }
+                }
+
+                return list;
+            }
+
+            public override void Write(Utf8JsonWriter writer, List<string> value, JsonSerializerOptions options)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

@@ -9,23 +9,34 @@ fetch('/Home/GetPatterns')
             empty.hidden = false;
             return;
         }
-
         list.hidden = false;
         empty.hidden = true;
 
         patterns.forEach(pattern => {
-            const li = document.createElement('li');
-            li.className = 'patterns';
+            const col = document.createElement('div');
+            col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
 
             const fileName = pattern.filePath.split('/').pop();
 
-            li.innerHTML = `
-                <img src="/Home/GetThumbnail?fileName=${fileName}" style="width: 150px; height: 150px; object-fit: cover;">
-                <h3>${pattern.name}</h3>
-                <p>${pattern.craftType}</p>
-                <a href="/Home/ViewPatternPdf?fileName=${fileName}" target="_blank">View PDF</a>
+            col.innerHTML = `
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body text-center">
+                        <h5 class="card-title mb-3">${pattern.name}</h5>
+                        <img src="/Home/GetThumbnail?fileName=${fileName}" 
+                             class="img-fluid rounded mb-3" 
+                             alt="${pattern.name}"
+                             style="width: 100%; height: 200px; object-fit: cover;">
+                    </div>
+                    <div class="card-footer bg-white border-0 text-center pb-3">
+                        <a href="/Home/ViewPatternPdf?fileName=${fileName}" 
+                           target="_blank" 
+                           class="btn btn-outline-primary btn-sm">
+                            View PDF
+                        </a>
+                    </div>
+                </div>
             `;
 
-            list.appendChild(li);
+            list.appendChild(col);
         });
     });

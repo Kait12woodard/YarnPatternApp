@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
+using PDFtoImage;
+using SkiaSharp;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Threading.Tasks;
 using YarnPatternApp.Data.Services.Abstract;
 using YarnPatternApp.Data.Services.Concrete;
 using YarnPatternApp.Models;
 using YarnPatternApp.Models.ViewModels;
-using System.Drawing;
-using System.Drawing.Imaging;
-using PDFtoImage;
-using System.Threading.Tasks;
 
 namespace YarnPatternApp.Controllers
 {
@@ -51,6 +52,7 @@ namespace YarnPatternApp.Controllers
         [HttpPost]
         public async Task<IActionResult> AddPattern(NewPattern newPattern)
         {
+            _logger.LogInformation("ThumbnailPage received: {ThumbnailPage}", newPattern.ThumbnailPage);
             if (!ModelState.IsValid) return View(newPattern);
 
             var pdfFile = Request.Form.Files.FirstOrDefault(file => file.Name == "pdfUpload");
@@ -59,6 +61,12 @@ namespace YarnPatternApp.Controllers
             {
                 var fileName = Path.GetFileName(newPattern.FilePath);
                 await _fileStorage.SavePdfAsync(pdfFile, fileName);
+            }
+
+            if (!string.IsNullOrEmpty(newPattern.FilePath))
+            {
+                var fileName = Path.GetFileName(newPattern.FilePath);
+                await _thumbnailService.GetOrCreateThumbnailAsync(fileName, newPattern.ThumbnailPage);
             }
 
             var success = _patternRepo.AddPattern(newPattern);
@@ -81,7 +89,6 @@ namespace YarnPatternApp.Controllers
             try
             {
                 var parsedData = _pdfParsingService.ParsePdfToPattern(pdfFile);
-
                 var fileName = Path.GetFileName(parsedData.FilePath);
                 var pdfPath = Path.Combine(_environment.ContentRootPath, "Data", "patterns", fileName);
 
@@ -91,11 +98,13 @@ namespace YarnPatternApp.Controllers
                 }
 
                 parsedData = await _llmService.ReviewAndEnhancePatternAsync(pdfPath, parsedData);
+                var thumbnailPreviews = _thumbnailService.GenerateThumbnailPreviews(pdfPath, maxPages: 5);
 
                 return Json(new
                 {
                     success = true,
                     data = parsedData,
+                    thumbnailPreviews = thumbnailPreviews,
                     message = "PDF parsed successfully! Please review and edit the information below."
                 });
             }
@@ -114,22 +123,14 @@ namespace YarnPatternApp.Controllers
 
             fileName = Path.GetFileName(fileName);
 
-            try
-            {
-                var thumbnailBytes = await _thumbnailService.GetOrCreateThumbnailAsync(fileName);
-                return File(thumbnailBytes, "image/jpeg");
-            }
-            catch (FileNotFoundException ex)
-            {
-                _logger.LogError(ex, "PDF not found for thumbnail generation: {FileName}", fileName);
+            var thumbnailPath = Path.Combine(_environment.WebRootPath, "images", "thumbnails",
+                Path.GetFileNameWithoutExtension(fileName) + ".jpg");
+
+            if (!System.IO.File.Exists(thumbnailPath))
                 return NotFound();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating thumbnail for {FileName}", fileName);
-                return NotFound();
-            }
- 
+
+            var thumbnailBytes = await System.IO.File.ReadAllBytesAsync(thumbnailPath);
+            return File(thumbnailBytes, "image/jpeg");
         }
 
         [HttpGet]

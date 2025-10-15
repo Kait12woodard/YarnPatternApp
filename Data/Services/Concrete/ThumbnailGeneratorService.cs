@@ -15,7 +15,7 @@ namespace YarnPatternApp.Data.Services.Concrete
             _logger = logger;
         }
 
-        public async Task<byte[]> GetOrCreateThumbnailAsync(string pdfFileName)
+        public async Task<byte[]> GetOrCreateThumbnailAsync(string pdfFileName, int pageNumber)
         {
             var thumbnailPath = Path.Combine(_envirorment.WebRootPath, "images", "thumbnails",
                 Path.GetFileNameWithoutExtension(pdfFileName) + ".jpg");
@@ -38,11 +38,12 @@ namespace YarnPatternApp.Data.Services.Concrete
                 Directory.CreateDirectory(thumbDir);
             }
 
-            _logger.LogInformation("Generating thumbnail form {PdfPath} to {ThumbnailPath}", pdfPath, thumbnailPath);
+            _logger.LogInformation("Generating thumbnail from page {Page} of {PdfPath} to {ThumbnailPath}",
+                pageNumber, pdfPath, thumbnailPath);
 
             using (var pdfStream = File.OpenRead(pdfPath))
             {
-                var skBitmap = Conversion.ToImage(pdfStream, page: 1);
+                var skBitmap = Conversion.ToImage(pdfStream, page: pageNumber);
                 using (var data = skBitmap.Encode(SKEncodedImageFormat.Jpeg, 90))
                 using (var fileStream = File.OpenWrite(thumbnailPath))
                 {
@@ -51,6 +52,47 @@ namespace YarnPatternApp.Data.Services.Concrete
             }
 
             return await File.ReadAllBytesAsync(thumbnailPath);
+        }
+
+        public List<string> GenerateThumbnailPreviews(string pdfPath, int maxPages = 5)
+        {
+            var previews = new List<string>();
+            try
+            {
+                if (!System.IO.File.Exists(pdfPath))
+                {
+                    _logger.LogWarning("PDF not found for preview generation: {Path}", pdfPath);
+                    return previews;
+                }
+
+                for (int i = 0; i < maxPages; i++)
+                {
+                    try
+                    {
+                        using var pdfStream = System.IO.File.OpenRead(pdfPath);
+                        var skBitmap = Conversion.ToImage(pdfStream, page: i);
+                        using (var data = skBitmap.Encode(SKEncodedImageFormat.Jpeg, 60))
+                        {
+                            var base64 = Convert.ToBase64String(data.ToArray());
+                            previews.Add($"data:image/jpeg;base64,{base64}");
+                        }
+                        skBitmap.Dispose();  
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogInformation(ex, "Reached end of document at page {Page}", i + 1);
+                        break;
+                    }
+                }
+
+                _logger.LogInformation("Generated {Count} thumbnail previews from {Path}", previews.Count, pdfPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating thumbnail previews for {Path}", pdfPath);
+            }
+
+            return previews;
         }
     }
 }

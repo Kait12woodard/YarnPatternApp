@@ -16,5 +16,6 @@
         public List<string>? ToolSizes { get; set; }
         public List<string>? YarnBrands { get; set; }
         public List<string>? YarnWeights { get; set; }
+        public int ThumbnailPage { get; set; } = 0;
     }
 }

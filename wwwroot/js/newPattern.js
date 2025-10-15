@@ -30,6 +30,8 @@
     document.getElementById('parsePdfBtn')?.addEventListener('click', async function () {
         const fileInput = document.getElementById('pdfUpload');
         const statusDiv = document.getElementById('parseStatus');
+        const thumbnailSelector = document.getElementById('thumbnailSelector');
+        const thumbnailOptions = document.getElementById('thumbnailOptions');
 
         if (!fileInput.files[0]) {
             statusDiv.innerHTML = '<div class="alert alert-warning">Please select a PDF file first.</div>';
@@ -74,6 +76,38 @@
                 result.data.tags?.forEach(tag => {
                     addTagToInput('tagsInput', 'tagsDisplay', tag);
                 });
+
+                if (result.thumbnailPreviews && result.thumbnailPreviews.length > 0) {
+                    thumbnailOptions.innerHTML = '';
+
+                    result.thumbnailPreviews.forEach((preview, index) => {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-2 col-4 mb-3';
+                        col.innerHTML = `
+            <div class="thumbnail-option ${index === 0 ? 'selected' : ''}" data-page="${index}">
+                <img src="${preview}" class="img-fluid" alt="Page ${index + 1}">
+                <div class="thumbnail-label">Page ${index + 1}</div>
+            </div>
+        `;
+                        thumbnailOptions.appendChild(col);
+                    });
+
+                    thumbnailSelector.style.display = 'block';
+
+                    document.querySelectorAll('.thumbnail-option').forEach(option => {
+                        option.addEventListener('click', function () {
+                            console.log('Clicked thumbnail, page:', this.dataset.page);
+
+                            document.querySelectorAll('.thumbnail-option').forEach(opt =>
+                                opt.classList.remove('selected'));
+                            this.classList.add('selected');
+
+                            document.getElementById('thumbnailPageInput').value = this.dataset.page;
+
+                            console.log('Hidden input value now:', document.getElementById('thumbnailPageInput').value); 
+                        });
+                    });
+                }
 
                 statusDiv.innerHTML = `<div class="alert alert-success">${result.message}</div>`;
                 document.querySelector('.card-header').scrollIntoView({ behavior: 'smooth' });

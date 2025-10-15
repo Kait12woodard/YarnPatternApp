@@ -27,7 +27,18 @@
                         </button>
                         <div id="parseStatus" class="mt-2"></div>
 
+                        <div id="thumbnailSelector" class="mt-4" style="display: none;">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Select Thumbnail Page</h6>
+                                    <p class="card-text text-muted mb-3">Click to choose which page to use as the pattern thumbnail</p>
+                                    <div class="row" id="thumbnailOptions"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <form asp-action="AddPattern" method="post">
+                            <input type="hidden" asp-for="ThumbnailPage" id="thumbnailPageInput" value="0" />
 
                             <div class="row mb-4">
 

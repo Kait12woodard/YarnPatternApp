@@ -73,3 +73,43 @@
 .is-invalid {
     border-color: #dc3545 !important;
 }
+
+.thumbnail-option {
+    border: 3px solid #dee2e6;
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+    .thumbnail-option:hover {
+        border-color: #0d6efd;
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .thumbnail-option.selected {
+        border-color: #198754;
+        background-color: #d1e7dd;
+        box-shadow: 0 4px 12px rgba(25,135,84,0.3);
+    }
+
+    .thumbnail-option img {
+        border-radius: 4px;
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+.thumbnail-label {
+    text-align: center;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.thumbnail-option.selected .thumbnail-label {
+    color: #198754;
+}

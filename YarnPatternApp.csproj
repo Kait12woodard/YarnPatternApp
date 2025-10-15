@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <Folder Include="Data\patterns\" />
+    <Folder Include="wwwroot\images\animations\" />
     <Folder Include="wwwroot\images\thumbnails\" />
   </ItemGroup>
 
