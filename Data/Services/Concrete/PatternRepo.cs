@@ -233,5 +233,178 @@ namespace YarnPatternApp.Data.Services.Concrete
                 .Include(p => p.CraftType)
                 .ToList();
         }
+
+        public Pattern? GetPatternById(int patternId)
+        {
+            return _context.Patterns
+                .Include(p => p.Designer)
+                .Include(p => p.CraftType)
+                .Include(p => p.Difficulty)
+                .Include(p => p.ProjectTypes)
+                .Include(p => p.Tags)
+                .Include(p => p.ToolSizes)
+                .Include(p => p.YarnBrands)
+                .Include(p => p.YarnWeights)
+                .FirstOrDefault(p => p.ID == patternId);
+        }
+
+        public NewPattern? GetPatternForEdit(int patternId)
+        {
+            var pattern = GetPatternById(patternId);
+            if (pattern == null) return null;
+
+            return new NewPattern
+            {
+                Name = pattern.Name,
+                Designer = pattern.Designer?.Name,
+                CraftType = pattern.CraftType.Craft,
+                Difficulty = pattern.Difficulty?.ID,
+                IsFree = pattern.IsFree,
+                IsFavorite = pattern.IsFavorite,
+                PatSource = pattern.PatSource,
+                HaveMade = pattern.HaveMade,
+                FilePath = pattern.FilePath,
+                ProjectTypes = pattern.ProjectTypes?.Select(pt => pt.Name).ToList(),
+                Tags = pattern.Tags?.Select(t => t.Tag).ToList(),
+                ToolSizes = pattern.ToolSizes?.Select(ts => ts.Size.ToString()).ToList(),
+                YarnBrands = pattern.YarnBrands?.Select(yb => yb.Name).ToList(),
+                YarnWeights = pattern.YarnWeights?.Select(yw => yw.Weight.ToString()).ToList()
+            };
+        }
+
+        public bool UpdatePattern(int patternId, NewPattern updatedPattern)
+        {
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                var pattern = GetPatternById(patternId);
+                if (pattern == null) return false;
+
+                pattern.Name = updatedPattern.Name;
+                pattern.IsFree = updatedPattern.IsFree;
+                pattern.IsFavorite = updatedPattern.IsFavorite;
+                pattern.PatSource = updatedPattern.PatSource;
+                pattern.HaveMade = updatedPattern.HaveMade;
+                pattern.FilePath = updatedPattern.FilePath;
+
+                pattern.Designer = GetOrCreateDesigner(updatedPattern.Designer);
+                pattern.CraftType = GetOrCreateCraftType(updatedPattern.CraftType);
+                pattern.Difficulty = GetDifficulty(updatedPattern.Difficulty);
+
+                _context.SaveChanges();
+
+                UpdateProjectTypes(pattern.ID, updatedPattern.ProjectTypes);
+                UpdateYarnWeights(pattern.ID, updatedPattern.YarnWeights);
+                UpdateToolSizes(pattern.ID, updatedPattern.ToolSizes);
+                UpdateYarnBrands(pattern.ID, updatedPattern.YarnBrands);
+                UpdateTags(pattern.ID, updatedPattern.Tags);
+
+                _context.SaveChanges();
+                transaction.Commit();
+                return true;
+            }
+            catch
+            {
+                transaction.Rollback();
+                return false;
+            }
+        }
+
+        private void UpdateProjectTypes(int patternId, List<string>? projectTypes)
+        {
+            var pattern = _context.Patterns.Include(pat => pat.ProjectTypes)
+                .First(pat => pat.ID == patternId);
+
+            pattern.ProjectTypes.Clear();
+
+            if (projectTypes?.Any() == true)
+            {
+                foreach (var typeName in projectTypes)
+                {
+                    var projectType = GetOrCreateProjectType(typeName);
+                    pattern.ProjectTypes.Add(projectType);
+                }
+            }
+        }
+
+        private void UpdateYarnWeights(int patternId, List<string?>? yarnWeights)
+        {
+            var pattern = _context.Patterns.Include(pat => pat.YarnWeights)
+                .First(pat => pat.ID == patternId);
+
+            pattern.YarnWeights.Clear();
+
+            if (yarnWeights?.Any() == true)
+            {
+                foreach (var weightStr in yarnWeights)
+                {
+                    if (byte.TryParse(weightStr, out byte weight))
+                    {
+                        var yarnWeight = GetOrCreateYarnWeight(weight);
+                        pattern.YarnWeights.Add(yarnWeight);
+                    }
+                }
+            }
+        }
+
+        private void UpdateToolSizes(int patternId, List<string?>? toolSizes)
+        {
+            var pattern = _context.Patterns.Include(pat => pat.ToolSizes)
+                .First(pat => pat.ID == patternId);
+
+            pattern.ToolSizes.Clear();
+
+            if (toolSizes?.Any() == true)
+            {
+                foreach (var sizeStr in toolSizes)
+                {
+                    if (decimal.TryParse(sizeStr, out decimal size))
+                    {
+                        var toolSize = GetOrCreateToolSize(size);
+                        pattern.ToolSizes.Add(toolSize);
+                    }
+                }
+            }
+        }
+
+        private void UpdateYarnBrands(int patternId, List<string?>? yarnBrands)
+        {
+            var pattern = _context.Patterns.Include(pat => pat.YarnBrands)
+                .First(pat => pat.ID == patternId);
+
+            pattern.YarnBrands.Clear();
+
+            if (yarnBrands?.Any() == true)
+            {
+                foreach (var brandName in yarnBrands)
+                {
+                    if (!string.IsNullOrWhiteSpace(brandName))
+                    {
+                        var yarnBrand = GetOrCreateYarnBrand(brandName);
+                        pattern.YarnBrands.Add(yarnBrand);
+                    }
+                }
+            }
+        }
+
+        private void UpdateTags(int patternId, List<string?>? tags)
+        {
+            var pattern = _context.Patterns.Include(pat => pat.Tags)
+                .First(pat => pat.ID == patternId);
+
+            pattern.Tags.Clear();
+
+            if (tags?.Any() == true)
+            {
+                foreach (var tagName in tags)
+                {
+                    if (!string.IsNullOrWhiteSpace(tagName))
+                    {
+                        var tag = GetOrCreateTag(tagName);
+                        pattern.Tags.Add(tag);
+                    }
+                }
+            }
+        }
     }
 }

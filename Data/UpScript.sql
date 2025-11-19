@@ -111,3 +111,9 @@ CREATE TABLE dbo.TagLookup (
     CONSTRAINT FK_TagLookup_Pattern FOREIGN KEY (PatternID)
         REFERENCES dbo.Patterns(ID) ON DELETE CASCADE
 );
+
+
+INSERT INTO dbo.Difficulty (Ranking) VALUES ('Beginner');
+INSERT INTO dbo.Difficulty (Ranking) VALUES ('Intermediate');
+INSERT INTO dbo.Difficulty (Ranking) VALUES ('Advanced');
+INSERT INTO dbo.Difficulty (Ranking) VALUES ('Expert');

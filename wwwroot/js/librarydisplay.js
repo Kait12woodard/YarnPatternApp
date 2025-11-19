@@ -1,6 +1,5 @@
 ﻿const list = document.getElementById('patternList');
 const empty = document.getElementById('emptyState');
-
 fetch('/Home/GetPatterns')
     .then(response => response.json())
     .then(patterns => {
@@ -11,13 +10,10 @@ fetch('/Home/GetPatterns')
         }
         list.hidden = false;
         empty.hidden = true;
-
         patterns.forEach(pattern => {
             const col = document.createElement('div');
             col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
-
             const fileName = pattern.filePath.split('/').pop();
-
             col.innerHTML = `
                 <div class="card h-100 shadow-sm">
                     <div class="card-body text-center">
@@ -30,13 +26,16 @@ fetch('/Home/GetPatterns')
                     <div class="card-footer bg-white border-0 text-center pb-3">
                         <a href="/Home/ViewPatternPdf?fileName=${fileName}" 
                            target="_blank" 
-                           class="btn btn-outline-primary btn-sm">
+                           class="btn btn-outline-primary btn-sm me-2">
                             View PDF
+                        </a>
+                        <a href="/Home/EditPattern?id=${pattern.id}"
+                            class="btn btn-outline-secondary btn-sm">
+                            Edit Pattern
                         </a>
                     </div>
                 </div>
             `;
-
             list.appendChild(col);
         });
     });

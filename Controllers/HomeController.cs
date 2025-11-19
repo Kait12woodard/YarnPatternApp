@@ -166,6 +166,31 @@ namespace YarnPatternApp.Controllers
             return File(fileStream, "application/pdf");
         }
 
+        [HttpGet]
+        public IActionResult EditPattern(int id)
+        {
+            var editPattern = _patternRepo.GetPatternForEdit(id);
+            if (editPattern == null)
+                return NotFound();
+            return View(editPattern);
+        }
+
+        [HttpPost]
+        public IActionResult EditPattern(int id, NewPattern updatedPattern)
+        {
+            if (!ModelState.IsValid)
+                return View(updatedPattern);
+
+            var success = _patternRepo.UpdatePattern(id, updatedPattern);
+            if (!success)
+            {
+                ModelState.AddModelError("", "Update Failed. Please check entries and try again.");
+                return View(updatedPattern);
+            }
+
+            return RedirectToAction("ManagePatterns");
+        }
+
         public IActionResult Privacy()
         {
             return View();
